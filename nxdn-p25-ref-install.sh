@@ -192,7 +192,7 @@ EOF
 
 echo ">> NXDN database update script"
 
-cat >$INSTALL_DIR/nxdnupdate.sh <<'EOF'
+cat >$INSTALL_DIR/NXDNReflector/nxdnupdate.sh <<'EOF'
 #!/bin/bash
 set -e
 systemctl stop nxdnreflector
