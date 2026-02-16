@@ -1,26 +1,29 @@
-##############################################
+####################################################################################################################################################################
 #  Script to install NXDN and (optionally) P25 Reflector
-#  This is a modification of a script from PE1BZF
+#  This is a modification and expansion of a script from PE1BZF
 #  Modified by Ramesh Dhami, VA3UV
-#  Script will install NXDNReflector from the N7HUD Repo
-#  and optionally, if hte P25 variable below is set to 1, build and configure the P25 reflector package
+#  Script will install NXDNReflector from the N7HUD Repo (the packages in the NOSTAR repo generated buffer overflow errors on Ubuntu systems)
+#  and optionally, if the P25 variable below is set to 1, build and configure the P25 reflector package
 #  
 #  The script assumes that you are installing on a server where xlxd is already installed, and thus
 #  some of the dependency packages like php are already installed.  I have also commented out the dashboard installation
-#  since in my application, I peer the NXDN and P25 reflector to my xlxd using xlxd v2.6.0 (thanks to Andy, MW0MWZ for the excellent work to enable this :)
+#  since in my application, I peer the NXDN and P25 reflector to my xlxd using xlxd v2.6.0 (thanks to Andy Taylor, MW0MWZ for the excellent work to enable this :)
 #
-##############################################
+####################################################################################################################################################################
 
 #!/bin/bash
 set -e
 
 ###########################################################
-# NXDNReflector – Definitieve Installer
+# Tested on the following OS'
 # Raspberry Pi OS Lite / Debian >= 11, and Ubuntu 24.04 LTS
 ###########################################################
 
-### BASIS VARIABELEN
+### Set Variables ###
 
+# Set P25=1 if you want to config and install the P25 reflector
+# the script will pull YSF/NXDN, and P25 reflectors from the N7HUD repo, but only builds the P25 Reflector if you explicitly set the P25 flag to 1
+#
 P25=1
 
 
@@ -48,7 +51,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 #############################################
-# APT RESET (voorkomt 404 mirror errors)
+# APT RESET (Prevents 404 Errors)
 #############################################
 echo ">> Reset APT"
 apt clean
@@ -58,7 +61,7 @@ apt --fix-broken install -y || true
 full-upgrade -y || true
 
 #############################################
-# BENODIGDE PACKAGES
+# INSTALL DEPENDENCY PACKAGES
 #############################################
 
 echo ">> Installing dependency packages..."
@@ -129,7 +132,7 @@ fi
 
 echo ">> Setting Logging Permissions"
 
-# Setting rights and permissions for NXDN logging)
+# Setting rights and permissions for NXDN logging
 chown root:adm /var/log
 chmod 775 /var/log
 
@@ -226,9 +229,10 @@ Persistent=true
 WantedBy=timers.target
 EOF
 
-#############################################
-# DASHBOARD INSTALLATIE
-#############################################
+###################################################
+# DASHBOARD INSTALLATION
+# COMMENTED OUT SINCE WE INSTALL ON AN XLXD SERVER
+###################################################
 #echo ">> Dashboard installeren"
 
 #cd $WWW_ROOT
@@ -269,15 +273,19 @@ EOF
 ####################################################################
 # update the NXDNReflector ini file with user settings
 
-read -p "Which TG will you be using ? (Example 56789): " NEWTG
-read -p "What port will you be listening on ? (Example 41400): " NEWPORT
+read -p "Which TG will you be using (you MUST enter a numerical TG #) ? (Example 56789): " NEWTG
+read -p "What port will you be listening on (you MUST enter a numerical port #) ? (Example 41400): " NEWPORT
+
 sudo sed -i "s/^[[:space:]]*TG[[:space:]]*=.*/TG=$NEWTG/g" /etc/NXDNReflector.ini
 
 sudo sed -i "s/^[[:space:]]*TGEnable[[:space:]]*=.*/TGEnable=$NEWTG/g" /etc/NXDNReflector.ini
 
 sudo sed -i "s/^Port[[:space:]]*=.*/Port=$NEWPORT/g" /etc/NXDNReflector.ini
-# echo "Alle Port en TG regels zijn aangepast naar: $NEWPORT e $NEWTG"
-# Path naar de log-file
+
+echo "Port and TG have been updated to: $NEWPORT and $NEWTG"
+
+# Update log file location
+
 sudo sed -i "s|^[[:space:]]*FilePath[[:space:]]*=.*|FilePath=/var/log/|" /etc/NXDNReflector.ini
 sudo sed -i "s|^[[:space:]]*Name[[:space:]]*=.*|Name=/usr/local/bin/DVReflectors/NXDNReflector/nxdn.csv | " /etc/NXDNReflector.ini
 
@@ -309,7 +317,8 @@ echo "=== INSTALLATION COMPLETE ==="
 echo ""
 echo "Reflector status : systemctl status nxdnreflector"
 echo "Listening on      : UDP ${NEWPORT}"
-echo "Dashboard        : http://$(hostname -I | awk '{print $1}')/NXDNReflector-Dashboard2/"
+
+#echo "Dashboard        : http://$(hostname -I | awk '{print $1}')/NXDNReflector-Dashboard2/"
 echo "To make configuration changes : sudo nano /etc/NXDNReflector.ini"
 echo ""
 #echo "Van het dashboard (na installatie) altijd de setup afmaken en veiligheidshalve verwijderen"
@@ -319,10 +328,11 @@ echo ""
 echo "After making configuration changes, please remember to:"
 echo "  sudo systemctl restart nxdnreflector"
 
+########################################################################################################################
 ### P25 Reflector Installation is optional - set the flag to 1 to install following the NXDN Reflector install.
-### You cannot install the P25 Reflector along (without the NXDN reflector, since this script assumes you will install
+### You cannot install the P25 Reflector alone (without the NXDN reflector, since this script assumes you will install
 ### the NXDN reflector as a minimum
-
+#########################################################################################################################
 
 if [[ $P25 -eq 1 ]]
 
@@ -416,7 +426,7 @@ cat >/etc/logrotate.d/p25reflector <<EOF
 EOF
 
 #############################################
-# P25 CSV UPDATE SCRIPT
+# P25 DMR ID UPDATE SCRIPT
 #############################################
 echo ">> P25 database update script"
 
@@ -434,7 +444,7 @@ EOF
 chmod +x $INSTALL_DIR/P25Reflector/p25update.sh
 
 #############################################
-# SYSTEMD TIMER – NXDN CSV
+# SYSTEMD TIMER – P25 DMRID Update
 #############################################
 echo ">> systemd timer (P25 db_update update)"
 
@@ -456,31 +466,22 @@ EOF
 
 ####################################################################
 # Update the P25Reflector.ini file
-
-
-######## VA3UV ---- Need to check this !!!! #######
-
+####################################################################
 
 #read -p "Which TG will you be using for P25 ? (Example 56789): " NEWP25TG
 read -p "What port will you be listening on ? (Example 41400): " NEWP25PORT
 #sudo sed -i "s/^[[:space:]]*TG[[:space:]]*=.*/TG=$NEWP25WTG/g" /etc/P25Reflector.ini
 #sudo sed -i "s/^[[:space:]]*TGEnable[[:space:]]*=.*/TGEnable=$NEWP25TG/g" /etc/P25Reflector.ini
 
-
-# PORT is OK
-
 sudo sed -i "s/^Port[[:space:]]*=.*/Port=$NEWP25PORT/g" /etc/P25Reflector.ini
-# echo "Alle Port en TG regels zijn aangepast naar: $NEWPORT e $NEWTG"
+
+echo "P25 Port set to: $NEWP25PORT"
+
 # Update the path for the log file...
-
-
-# Log path is OK
 
 sudo sed -i "s|^[[:space:]]*FilePath[[:space:]]*=.*|FilePath=/var/log/|" /etc/P25Reflector.ini
 sudo sed -i "s|^[[:space:]]*Name[[:space:]]*=.*|Name=/usr/local/bin/DVReflectors/P25Reflector/dmrid.dat | " /etc/NXDNReflector.ini
 
-
-# dmrid.dat is OK
 
 echo ">> Download DMR ID DAT file"
 sudo -u mmdvm wget -O /usr/local/bin/DVReflectors/P25Reflector/dmrid.dat \
@@ -508,15 +509,12 @@ echo "=== INSTALLATION COMPLETE ==="
 echo ""
 echo "Reflector status : systemctl status p25reflector"
 echo "Listening on      : UDP ${NEWP25PORT}"
-#echo "Dashboard        : http://$(hostname -I | awk '{print $1}')/NXDNReflector-Dashboard2/"
+
 echo "To make configuration changes : sudo nano /etc/P25Reflector.ini"
 echo ""
-#echo "Van het dashboard (na installatie) altijd de setup afmaken en veiligheidshalve verwijderen"
-#echo "http://$(hostname -I | awk '{print $1}')/NXDNReflector-Dashboard2/setup.php"
 echo ""
 echo "After making configuration changes, please remember to:"
 echo "  sudo systemctl restart p25reflector"
-
 
 else
 
