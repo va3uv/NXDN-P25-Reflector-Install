@@ -128,19 +128,20 @@ fi
 
 ################################################
 # LOGGING – Create log files and set permissions
+# DELETE THIS!! ********************************
 ################################################
 
-echo ">> Setting Logging Permissions"
+#echo ">> Setting Logging Permissions"
 
 # Setting rights and permissions for NXDN logging
-chown root:adm /var/log
-chmod 775 /var/log
+#chown root:adm /var/log
+#chmod 775 /var/log
 
 # create log files
-touch /var/log/NXDNReflector.log
-touch /var/log/NXDNReflector-error.log
-chown $USER:adm /var/log/NXDNReflector*.log
-chmod 640 /var/log/NXDNReflector*.log
+#touch /var/log/NXDNReflector.log
+#touch /var/log/NXDNReflector-error.log
+#chown $USER:adm /var/log/NXDNReflector*.log
+#chmod 640 /var/log/NXDNReflector*.log
 
 #############################################
 # SYSTEMD SERVICE (self-daemonizing!)
@@ -151,7 +152,8 @@ echo ">> installing systemd service script"
 cat >/etc/systemd/system/$SERVICE.service <<EOF
 [Unit]
 Description=NXDNReflector
-After=network.target
+Requires=network.target
+After=syslog.target network.target
 
 [Service]
 Type=simple
@@ -164,8 +166,6 @@ ExecStart=$INSTALL_DIR/NXDNReflector/NXDNReflector $INI_FILE
 RemainAfterExit=yes
 
 Restart=on-failure
-StandardOutput=append:/var/log/NXDNReflector.log
-StandardError=append:/var/log/NXDNReflector-error.log
 
 [Install]
 WantedBy=multi-user.target
@@ -173,21 +173,22 @@ EOF
 
 #############################################
 # LOGROTATE
+# I Think this can be deleted too
 #############################################
 
-echo ">> Setting logrotate"
+#echo ">> Setting logrotate"
 
-cat >/etc/logrotate.d/nxdnreflector <<EOF
-/var/log/NXDNReflector*.log {
-  daily
-  rotate 14
-  compress
-  delaycompress
-  missingok
-  notifempty
-  create 0640 $USER adm
-}
-EOF
+#cat >/etc/logrotate.d/nxdnreflector <<EOF
+#/var/log/NXDNReflector*.log {
+#  daily
+#  rotate 14
+#  compress
+#  delaycompress
+#  missingok
+#  notifempty
+#  create 0640 $USER adm
+#}
+#EOF
 
 #############################################
 # NXDN CSV UPDATE SCRIPT
@@ -284,10 +285,16 @@ sudo sed -i "s/^Port[[:space:]]*=.*/Port=$NEWPORT/g" /etc/NXDNReflector.ini
 
 echo "Port and TG have been updated to: $NEWPORT and $NEWTG"
 
-# Update log file location
+# Set the Daemon = 0 so logging goes to the journal
 
-sudo sed -i "s|^[[:space:]]*FilePath[[:space:]]*=.*|FilePath=/var/log/|" /etc/NXDNReflector.ini
-sudo sed -i "s|^[[:space:]]*Name[[:space:]]*=.*|Name=/usr/local/bin/DVReflectors/NXDNReflector/nxdn.csv | " /etc/NXDNReflector.ini
+sudo sed -i "s/^[[:space:]]*Daemon[[:space:]]*=.*/Daemon=0/g" /etc/NXDNReflector.ini
+
+# Update FileLevel to 0
+
+sudo sed -i "s|^[[:space:]]*FileLevel[[:space:]]*=.*|FileLevel=0/g" /etc/NXDNReflector.ini
+
+#sudo sed -i "s|^[[:space:]]*FilePath[[:space:]]*=.*|FilePath=/var/log/|" /etc/NXDNReflector.ini
+#sudo sed -i "s|^[[:space:]]*Name[[:space:]]*=.*|Name=/usr/local/bin/DVReflectors/NXDNReflector/nxdn.csv | " /etc/NXDNReflector.ini
 
 echo ">> Download NXDN CSV file"
 sudo -u mmdvm wget -O /usr/local/bin/DVReflectors/NXDNReflector/nxdn.csv \
@@ -317,12 +324,11 @@ echo "=== INSTALLATION COMPLETE ==="
 echo ""
 echo "Reflector status : systemctl status nxdnreflector"
 echo "Listening on      : UDP ${NEWPORT}"
-
+echo "Logging available via the journal (systemctl -f -u nxdnreflector)"
+echo ""
 #echo "Dashboard        : http://$(hostname -I | awk '{print $1}')/NXDNReflector-Dashboard2/"
 echo "To make configuration changes : sudo nano /etc/NXDNReflector.ini"
 echo ""
-#echo "Van het dashboard (na installatie) altijd de setup afmaken en veiligheidshalve verwijderen"
-#echo "http://$(hostname -I | awk '{print $1}')/NXDNReflector-Dashboard2/setup.php"
 echo ""
 
 echo "After making configuration changes, please remember to:"
@@ -365,17 +371,18 @@ fi
 
 #############################################
 # LOGGING
+# DELETE THIS
 #############################################
 
-echo ">> Setting Logging Permissions"
+#echo ">> Setting Logging Permissions"
 
 # Setting rights and permissions for P25 logging)
 
 # create log files
-touch /var/log/P25Reflector.log
-touch /var/log/P25Reflector-error.log
-chown $USER:adm /var/log/P25Reflector*.log
-chmod 640 /var/log/P25Reflector*.log
+#touch /var/log/P25Reflector.log
+#touch /var/log/P25Reflector-error.log
+#chown $USER:adm /var/log/P25Reflector*.log
+#chmod 640 /var/log/P25Reflector*.log
 
 
 
@@ -388,7 +395,8 @@ echo ">> systemd service installation"
 cat >/etc/systemd/system/$P25_SERVICE.service <<EOF
 [Unit]
 Description=P25Reflector
-After=network.target
+Requires=network.target
+After=syslog.target network.target
 
 [Service]
 Type=simple
@@ -401,8 +409,8 @@ ExecStart=$INSTALL_DIR/P25Reflector/P25Reflector $P25_INI_FILE
 RemainAfterExit=yes
 
 Restart=on-failure
-StandardOutput=append:/var/log/P25Reflector.log
-StandardError=append:/var/log/P25Reflector-error.log
+#StandardOutput=append:/var/log/P25Reflector.log
+#StandardError=append:/var/log/P25Reflector-error.log
 
 [Install]
 WantedBy=multi-user.target
@@ -410,20 +418,22 @@ EOF
 
 #############################################
 # LOGROTATE
+# DELETE THIS!!
+#
 #############################################
-echo ">> Setting logrotate"
+#echo ">> Setting logrotate"
 
-cat >/etc/logrotate.d/p25reflector <<EOF
-/var/log/P25Reflector*.log {
-  daily
-  rotate 14
-  compress
-  delaycompress
-  missingok
-  notifempty
-  create 0640 $USER adm
-}
-EOF
+#cat >/etc/logrotate.d/p25reflector <<EOF
+#/var/log/P25Reflector*.log {
+#  daily
+#  rotate 14
+#  compress
+#  delaycompress
+#  missingok
+#  notifempty
+#  create 0640 $USER adm
+#}
+#EOF
 
 #############################################
 # P25 DMR ID UPDATE SCRIPT
@@ -468,20 +478,13 @@ EOF
 # Update the P25Reflector.ini file
 ####################################################################
 
-#read -p "Which TG will you be using for P25 ? (Example 56789): " NEWP25TG
-read -p "What port will you be listening on ? (Example 41400): " NEWP25PORT
-#sudo sed -i "s/^[[:space:]]*TG[[:space:]]*=.*/TG=$NEWP25WTG/g" /etc/P25Reflector.ini
-#sudo sed -i "s/^[[:space:]]*TGEnable[[:space:]]*=.*/TGEnable=$NEWP25TG/g" /etc/P25Reflector.ini
+sudo sed -i "s/^Daemon[[:space:]]*=.*/Daemon=0/g" /etc/P25Reflector.ini
+sudo sed -i "s/^FileLevel[[:space:]]*=.*/FileLevel=0/g" /etc/P25Reflector.ini
 
+read -p "What port will you be listening on ? (Example 41400): " NEWP25PORT
 sudo sed -i "s/^Port[[:space:]]*=.*/Port=$NEWP25PORT/g" /etc/P25Reflector.ini
 
 echo "P25 Port set to: $NEWP25PORT"
-
-# Update the path for the log file...
-
-sudo sed -i "s|^[[:space:]]*FilePath[[:space:]]*=.*|FilePath=/var/log/|" /etc/P25Reflector.ini
-sudo sed -i "s|^[[:space:]]*Name[[:space:]]*=.*|Name=/usr/local/bin/DVReflectors/P25Reflector/dmrid.dat | " /etc/NXDNReflector.ini
-
 
 echo ">> Download DMR ID DAT file"
 sudo -u mmdvm wget -O /usr/local/bin/DVReflectors/P25Reflector/dmrid.dat \
@@ -509,7 +512,8 @@ echo "=== INSTALLATION COMPLETE ==="
 echo ""
 echo "Reflector status : systemctl status p25reflector"
 echo "Listening on      : UDP ${NEWP25PORT}"
-
+echo "Logging available via the journal (systemctl -f -u p25reflector)"
+echo ""
 echo "To make configuration changes : sudo nano /etc/P25Reflector.ini"
 echo ""
 echo ""
