@@ -291,7 +291,7 @@ sudo sed -i "s/^Daemon[[:space:]]*=.*/Daemon=0/g" /etc/NXDNReflector.ini
 
 # Update FileLevel to 0
 
-sudo sed -i "s|^[[:space:]]*FileLevel[[:space:]]*=.*|FileLevel=0/g" /etc/NXDNReflector.ini
+sudo sed -i "s/^[[:space:]]*FileLevel[[:space:]]*=.*|FileLevel=0/g" /etc/NXDNReflector.ini
 
 #sudo sed -i "s|^[[:space:]]*FilePath[[:space:]]*=.*|FilePath=/var/log/|" /etc/NXDNReflector.ini
 #sudo sed -i "s|^[[:space:]]*Name[[:space:]]*=.*|Name=/usr/local/bin/DVReflectors/NXDNReflector/nxdn.csv | " /etc/NXDNReflector.ini
