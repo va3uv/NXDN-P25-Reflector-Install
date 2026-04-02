@@ -287,7 +287,7 @@ echo "Port and TG have been updated to: $NEWPORT and $NEWTG"
 
 # Set the Daemon = 0 so logging goes to the journal
 
-sudo sed -i "s/^[[:space:]]*Daemon[[:space:]]*=.*/Daemon=0/g" /etc/NXDNReflector.ini
+sudo sed -i "s/^Daemon[[:space:]]*=.*/Daemon=0/g" /etc/NXDNReflector.ini
 
 # Update FileLevel to 0
 
