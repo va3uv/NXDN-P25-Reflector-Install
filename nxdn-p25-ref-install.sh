@@ -221,7 +221,16 @@ systemctl enable nxdnreflector
 systemctl start nxdnreflector
 systemctl enable --now nxdn-db-update.timer
 
-#systemctl restart apache2
+#############################################
+# Give the www-data user access to the journal
+#############################################
+#
+usermod -aG systemd-journal www-data
+
+PHP_MAJOR_MINOR_CUT=$(php -v | head -n 1 | cut -d' ' -f2 | cut -f1-2 -d'.')
+
+systemctl restart php$PHP_MAJOR_MINOR_CUT-fpm
+
 
 #############################################
 # Final Wrap-Up for NXDN
