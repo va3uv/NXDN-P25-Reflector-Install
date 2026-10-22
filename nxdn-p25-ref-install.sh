@@ -323,7 +323,7 @@ echo ">> P25 database update script"
 cat >$INSTALL_DIR/P25Reflector/p25update.sh <<'EOF'
 #!/bin/bash
 set -e
-systemctl stop p25nreflector
+systemctl stop p25reflector
 cd /usr/local/bin/DVReflectors/P25Reflector
 mv dmrid.dat dmrid.old 2>/dev/null || true
 wget -q -O nxdn.csv https://www.radioid.net/static/dmrid.dat
